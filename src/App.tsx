@@ -1,26 +1,30 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+// App.js
+import { Routes, Route } from 'react-router-dom'
+import Home from './pages/ResignationUserList'
+import Layout from './Layout'
+import HRQueriesCreate from './pages/hr/HRQueriesCreate'
+import InitialOffBoarding from './pages/hr/InitialOffBoarding'
+import NotFound from './components/NotFound'
+import Dashboard from './pages/Dashboard'
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const App = () => {
+    return (
+        <Layout>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route
+                    path="/hr/queries/create"
+                    element={<HRQueriesCreate />}
+                />
+                <Route
+                    path="/hr/offboarding"
+                    element={<InitialOffBoarding />}
+                />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="*" element={<NotFound />} />
+            </Routes>
+        </Layout>
+    )
 }
 
-export default App;
+export default App
