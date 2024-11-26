@@ -50,11 +50,100 @@ import {
     DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { appConstants } from '../../constants/appConstants'
+import { motion, AnimatePresence } from 'framer-motion'
+import confetti from 'canvas-confetti'
+
+const SuccessAnimation = ({
+    isOpen,
+    onClose,
+    fields,
+}: {
+    isOpen: boolean
+    onClose: () => void
+    fields: any[]
+}) => {
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+                    onClick={onClose}
+                >
+                    <motion.div
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.5, opacity: 0 }}
+                        transition={{ type: 'spring', duration: 0.5 }}
+                        className="bg-white rounded-2xl p-8 shadow-2xl max-w-md mx-4 relative overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.2 }}
+                            className="w-24 h-24 rounded-full bg-green-100 mx-auto flex items-center justify-center"
+                        >
+                            <motion.svg
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                transition={{ duration: 0.5, delay: 0.3 }}
+                                className="w-12 h-12 text-green-500"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                />
+                            </motion.svg>
+                        </motion.div>
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.4 }}
+                            className="text-2xl font-bold text-center mt-6 text-gray-800"
+                        >
+                            Form Saved Successfully!
+                        </motion.h2>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5 }}
+                            className="text-gray-600 text-center mt-2"
+                        >
+                            Your form has been created with
+                            <span className="text-blue-600 px-2 font-bold">
+                                {fields?.length || 0}
+                            </span>{' '}
+                            fields
+                        </motion.p>
+                        <motion.button
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6 }}
+                            onClick={onClose}
+                            className="mt-6 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            Continue
+                        </motion.button>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    )
+}
 
 export default function FormGenerator() {
     const [fields, setFields] = useState<any[]>([])
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+    const [showSuccess, setShowSuccess] = useState(false)
     console.log(isPreviewOpen)
     const handleAddField = (type: any) => {
         setFields([
@@ -64,23 +153,74 @@ export default function FormGenerator() {
                 type,
                 name: '',
                 displayName: '',
-                question: type === 'date' ? 'When did this occur?' : '',
-                options: type === 'checkbox' ? ['Yes', 'No'] : [],
-                defaultValue: '',
                 isMandatory: false,
                 isEnabled: true,
                 visibility: 'Show',
-                errorMessage: '',
                 description: '',
+                // Base configuration based on type
+                ...(type === 'text' && {
+                    question: 'Please provide your answer',
+                    placeholder: 'Enter your response...',
+                    defaultValue: '',
+                    errorMessage: 'Please enter a valid response',
+                }),
+                ...(type === 'number' && {
+                    question: 'Enter a number',
+                    placeholder: 'Enter a number...',
+                    defaultValue: '',
+                    minValue: '',
+                    maxValue: '',
+                    errorMessage: 'Please enter a valid number',
+                }),
                 ...(type === 'date' && {
+                    question: 'When did this occur?',
                     minDate: '',
                     maxDate: '',
                     dateFormat: 'yyyy-MM-dd',
                     placeholder: 'Select date...',
                     value: null,
-                    question: '',
                     minDateLabel: 'Earliest allowed date',
                     maxDateLabel: 'Latest allowed date',
+                    errorMessage: 'Please select a valid date',
+                }),
+                ...(type === 'checkbox' && {
+                    question: 'Please select applicable options',
+                    options: ['Yes', 'No'],
+                    defaultValue: [],
+                    errorMessage: 'Please select at least one option',
+                }),
+                ...(type === 'radio' && {
+                    question: 'Please select one option',
+                    options: ['Option 1', 'Option 2'],
+                    defaultValue: '',
+                    errorMessage: 'Please select an option',
+                }),
+                ...(type === 'select' && {
+                    question: 'Choose from the dropdown',
+                    options: ['Option 1', 'Option 2'],
+                    defaultValue: '',
+                    placeholder: 'Select an option...',
+                    errorMessage: 'Please select an option',
+                }),
+                ...(type === 'multi-select' && {
+                    question: 'Choose multiple options',
+                    options: ['Option 1', 'Option 2'],
+                    defaultValue: [],
+                    placeholder: 'Select options...',
+                    errorMessage: 'Please select at least one option',
+                }),
+                ...(type === 'email' && {
+                    question: 'What is your email address?',
+                    placeholder: 'Enter email address...',
+                    defaultValue: '',
+                    errorMessage: 'Please enter a valid email address',
+                }),
+                ...(type === 'textarea' && {
+                    question: 'Please provide detailed response',
+                    placeholder: 'Enter your detailed response...',
+                    defaultValue: '',
+                    rows: 4,
+                    errorMessage: 'Please provide a detailed response',
                 }),
             },
         ])
@@ -129,10 +269,20 @@ export default function FormGenerator() {
             await new Promise((resolve) => setTimeout(resolve, 1000))
             console.log('Form Data:', formData)
 
-            // Show preview
-            setIsPreviewOpen(true)
+            // Launch confetti
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+            })
 
-            // Success notification
+            // Show success animation
+            setShowSuccess(true)
+
+            // Don't show preview immediately
+            // setIsPreviewOpen(true)
+
+            // Success notification still shows in corner
             toast.success('Form saved successfully!', {
                 description: `${fields.length} fields configured`,
             })
@@ -147,11 +297,11 @@ export default function FormGenerator() {
 
     return (
         <TooltipProvider>
-            <div className="min-h-screen bg-gray-50 py-8">
+            <div className="min-h-screen bg-slate-100 py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Card className="mb-8 border-none shadow-md bg-white/50 backdrop-blur supports-[backdrop-filter]:bg-white/50">
                         <CardContent className="py-8">
-                            <div className="flex justify-between items-start gap-8">
+                            <div className="flex justify-between items-start gap-8 pt-5">
                                 {/* Left Section */}
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -255,7 +405,7 @@ export default function FormGenerator() {
                     {fields.length === 0 ? (
                         <EmptyState onAddField={handleAddField} />
                     ) : (
-                        <div className="space-y-6">
+                        <div className="space-y-6 bg-white">
                             <Accordion
                                 type="single"
                                 collapsible
@@ -560,6 +710,30 @@ export default function FormGenerator() {
                                                         </label>
                                                     </div>
 
+                                                    {field.isMandatory && (
+                                                        <FormFieldWrapper
+                                                            label="Error Message"
+                                                            required
+                                                            htmlFor={`error-${field.id}`}
+                                                        >
+                                                            <Input
+                                                                id={`error-${field.id}`}
+                                                                value={
+                                                                    field.errorMessage
+                                                                }
+                                                                onChange={(e) =>
+                                                                    updateField(
+                                                                        field.id,
+                                                                        'errorMessage',
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                placeholder="Error message when validation fails"
+                                                            />
+                                                        </FormFieldWrapper>
+                                                    )}
+
                                                     {field.type === 'date' && (
                                                         <>
                                                             <FormFieldWrapper
@@ -702,6 +876,15 @@ export default function FormGenerator() {
 
             {/* Toast Container */}
             <Toaster position="top-right" />
+
+            <SuccessAnimation
+                isOpen={showSuccess}
+                onClose={() => {
+                    setShowSuccess(false)
+                    setIsPreviewOpen(true) // Show preview after closing success animation
+                }}
+                fields={fields}
+            />
         </TooltipProvider>
     )
 }
