@@ -23,6 +23,7 @@
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
         "crypto-browserify": "^3.12.1",
+        "date-fns": "^4.1.0",
         "framer-motion": "^11.11.17",
         "google-auth-library": "^9.15.0",
         "googleapis": "^144.0.0",
@@ -74,6 +75,7 @@
     },
     "devDependencies": {
         "@types/canvas-confetti": "^1.6.4",
+        "@types/react-datepicker": "^7.0.0",
         "autoprefixer": "^10.4.20",
         "postcss": "^8.4.49",
         "prettier": "^3.3.3",
