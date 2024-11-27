@@ -2,17 +2,39 @@ import React, { useState } from 'react'
 import { EmployeeDetails } from '../../components/ui/EmployeeDetails'
 import { Textarea } from '../../components/ui/inputFields/TextareaInput'
 import { appConstants } from '../../constants/appConstants'
-import { scheduleTomorrowMeeting } from '../../config/googleCalendar'
+import { MeetingScheduler } from '../../components/MeetingScheduler/MeetingScheduler'
 import { toast } from 'sonner'
-import { CalendarPlus, Video } from 'lucide-react'
+import { Video, Calendar, Link as LinkIcon, ExternalLink } from 'lucide-react'
+
+interface Employee {
+    name: string
+    email: string
+    role: string
+    phone: string
+    joinDate: string
+    status: 'active'
+    imageUrl: string
+    remainingDays: number
+    designation: string
+    currentProject: string
+    experience: string
+    department: string
+}
+
+interface MeetingDetails {
+    eventLink?: string
+    meetLink?: string
+    scheduledTime?: string
+}
 
 const Offboarding = () => {
-    const [isInterviewCompleted, setIsInterviewCompleted] = useState(true)
+    const [isInterviewCompleted, setIsInterviewCompleted] = useState(false)
     const [comments, setComments] = useState('')
-    const [isScheduling, setIsScheduling] = useState(false)
-    const [meetLink, setMeetLink] = useState<string | null>(null)
+    const [meetingDetails, setMeetingDetails] = useState<MeetingDetails | null>(
+        null
+    )
 
-    const employee = {
+    const employee: Employee = {
         name: 'John Doe',
         email: 'john.doe@company.com',
         role: 'Senior Software Engineer',
@@ -27,158 +49,222 @@ const Offboarding = () => {
         department: 'Engineering',
     }
 
-    const handleScheduleInterview = async () => {
-        setIsScheduling(true)
-        try {
-            const result = await scheduleTomorrowMeeting({
-                summary: `Exit Interview - ${employee.name}`,
-                description: `Exit Interview for ${employee.name} (${employee.designation}) from ${employee.department}`,
-                durationMinutes: 60,
-                attendees: [employee.email, 'hr@company.com'],
-            })
-
-            setMeetLink(result.meetLink || null)
-
-            toast.success('Interview scheduled successfully!', {
-                description: (
-                    <div className="mt-2 space-y-2">
-                        <p>
-                            Calendar invites have been sent to all participants.
-                        </p>
-                        <p className="text-sm text-gray-600">
-                            The meeting is scheduled for tomorrow at 10:00 AM
-                        </p>
-                    </div>
-                ),
-            })
-        } catch (error) {
-            toast.error('Failed to schedule interview', {
-                description: 'Please try again or contact IT support.',
-            })
-            console.error('Error scheduling interview:', error)
-        } finally {
-            setIsScheduling(false)
-        }
+    const handleMeetingScheduled = (details: MeetingDetails) => {
+        setMeetingDetails(details)
     }
 
     return (
-        <div className="p-8 m-4 bg-white max-w-7xl mx-auto rounded-xl shadow-lg">
-            {/* Employee Details Card */}
-            <div className="bg-gray-50 rounded-lg p-6 mb-8">
-                <EmployeeDetails
-                    emp={{ ...employee, status: 'active' as const }}
-                />
-            </div>
-
-            {/* Exit Interview Form */}
-            <div className="bg-gray-50 rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-6 text-gray-800">
-                    Exit Interview Form
-                </h2>
-
-                {/* Toggle Section */}
-                <div className="flex items-center space-x-4 bg-white p-4 rounded-lg">
-                    <label className="text-gray-800 font-medium flex-grow">
-                        {appConstants.OFFBOARDING_QUESTION}
-                    </label>
-                    <button
-                        onClick={() => {
-                            setIsInterviewCompleted((prev) => !prev)
-                            setComments('')
-                            setMeetLink(null)
-                        }}
-                        className={`w-16 h-8 rounded-full flex items-center px-1 transition-all duration-300 ${
-                            isInterviewCompleted ? 'bg-blue-600' : 'bg-gray-300'
-                        }`}
-                    >
-                        <span
-                            className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-                                isInterviewCompleted ? 'translate-x-8' : ''
-                            }`}
-                        />
-                    </button>
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        Employee Offboarding
+                    </h1>
+                    <p className="mt-2 text-sm text-gray-600">
+                        Manage exit process and schedule interview
+                    </p>
                 </div>
 
-                {/* Schedule Interview Section */}
-                {!isInterviewCompleted && (
-                    <div className="mt-6 bg-white p-6 rounded-lg">
-                        <div className="space-y-4">
-                            <button
-                                onClick={handleScheduleInterview}
-                                disabled={isScheduling || !!meetLink}
-                                className={`flex items-center justify-center gap-2 w-full py-3 px-6 rounded-lg transition-all duration-200 ${
-                                    isScheduling || meetLink
-                                        ? 'bg-gray-300 cursor-not-allowed'
-                                        : 'bg-blue-500 hover:bg-blue-600 transform hover:-translate-y-0.5'
-                                } text-white font-medium`}
-                            >
-                                {isScheduling ? (
-                                    'Scheduling...'
-                                ) : meetLink ? (
-                                    'Interview Scheduled'
-                                ) : (
-                                    <>
-                                        <Video className="w-5 h-5" />
-                                        <CalendarPlus className="w-5 h-5" />
-                                        Schedule Exit Interview
-                                    </>
+                <div className="space-y-6">
+                    {/* Employee Details Card */}
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                            Employee Information
+                        </h2>
+                        <EmployeeDetails emp={employee} />
+                    </div>
+
+                    {/* Meeting Details Card - Show when meeting is scheduled */}
+                    {meetingDetails && (
+                        <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                    <Video className="w-5 h-5 text-blue-600" />
+                                    Scheduled Interview
+                                </h2>
+                                <span className="text-sm text-gray-500">
+                                    Tomorrow at 10:00 AM
+                                </span>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {/* Google Meet Link */}
+                                {meetingDetails.meetLink && (
+                                    <div className="bg-blue-50 rounded-lg p-4 flex items-center justify-between group hover:bg-blue-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <Video className="w-5 h-5 text-blue-600" />
+                                            <div>
+                                                <p className="font-medium text-blue-600">
+                                                    Google Meet
+                                                </p>
+                                                <p className="text-sm text-blue-500">
+                                                    Click to join meeting
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <a
+                                            href={meetingDetails.meetLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            Join
+                                            <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                    </div>
                                 )}
-                            </button>
 
-                            {meetLink && (
-                                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                                    <p className="text-sm text-gray-600 mb-2">
-                                        Interview has been scheduled for
-                                        tomorrow at 10:00 AM
-                                    </p>
-                                    <a
-                                        href={meetLink}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 hover:text-blue-600 flex items-center gap-2"
+                                {/* Calendar Link */}
+                                {meetingDetails.eventLink && (
+                                    <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-between group hover:bg-gray-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <Calendar className="w-5 h-5 text-gray-600" />
+                                            <div>
+                                                <p className="font-medium text-gray-700">
+                                                    Calendar Event
+                                                </p>
+                                                <p className="text-sm text-gray-500">
+                                                    View in Google Calendar
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <a
+                                            href={meetingDetails.eventLink}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-gray-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            View
+                                            <ExternalLink className="w-4 h-4" />
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Quick Copy Section */}
+                            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-gray-600">
+                                        Meeting Link
+                                    </span>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(
+                                                meetingDetails.meetLink || ''
+                                            )
+                                            toast.success(
+                                                'Meeting link copied to clipboard!'
+                                            )
+                                        }}
+                                        className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
                                     >
-                                        <Video className="w-4 h-4" />
-                                        Join Google Meet
-                                    </a>
+                                        <LinkIcon className="w-4 h-4" />
+                                        Copy Link
+                                    </button>
                                 </div>
-                            )}
+                                <p className="text-sm text-gray-500 mt-1 truncate">
+                                    {meetingDetails.meetLink}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Comments Section */}
-                {isInterviewCompleted && (
-                    <div className="mt-6 bg-white p-6 rounded-lg">
-                        <label
-                            htmlFor="comments"
-                            className="block text-gray-800 font-medium mb-3"
-                        >
-                            Employee's Comments:
-                        </label>
-                        <Textarea
-                            id="comments"
-                            value={comments}
-                            onChange={(e) => setComments(e.target.value)}
-                            className="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                            rows={4}
-                            placeholder="Please share your thoughts and feedback..."
-                        />
+                    {/* Exit Interview Section */}
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-6">
+                            Exit Interview Status
+                        </h2>
 
-                        <button
-                            disabled={!comments.trim()}
-                            className={`mt-6 px-8 py-3 text-white font-medium rounded-lg transition-all duration-200 ${
-                                comments.trim()
-                                    ? 'bg-blue-500 hover:bg-blue-600 transform hover:-translate-y-0.5'
-                                    : 'bg-gray-300 cursor-not-allowed'
-                            }`}
-                            onClick={() =>
-                                alert('Form submitted successfully!')
-                            }
-                        >
-                            Submit Feedback
-                        </button>
+                        {/* Toggle Section */}
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-6">
+                            <label className="text-gray-700 font-medium">
+                                {appConstants.OFFBOARDING_QUESTION}
+                            </label>
+                            <button
+                                onClick={() => {
+                                    setIsInterviewCompleted((prev) => !prev)
+                                    setComments('')
+                                }}
+                                className="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none"
+                                style={{
+                                    backgroundColor: isInterviewCompleted
+                                        ? '#10B981'
+                                        : '#6B7280',
+                                }}
+                            >
+                                <span
+                                    className={`inline-block w-4 h-4 transform transition-transform bg-white rounded-full ${
+                                        isInterviewCompleted
+                                            ? 'translate-x-6'
+                                            : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Conditional Rendering based on Interview Status */}
+                        {!isInterviewCompleted ? (
+                            <div className="mt-6">
+                                <MeetingScheduler
+                                    employeeName={employee.name}
+                                    employeeEmail={employee.email}
+                                    hrEmail="hr@company.com"
+                                    onMeetingScheduled={handleMeetingScheduled}
+                                />
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <p className="text-green-800">
+                                        Exit interview has been completed.
+                                        Please provide your comments below.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="comments"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Interview Comments
+                                    </label>
+                                    <Textarea
+                                        id="comments"
+                                        value={comments}
+                                        onChange={(e) =>
+                                            setComments(e.target.value)
+                                        }
+                                        placeholder="Enter your comments about the exit interview..."
+                                        className="w-full min-h-[120px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        if (comments.trim()) {
+                                            toast.success(
+                                                'Comments saved successfully!'
+                                            )
+                                        } else {
+                                            toast.error(
+                                                'Please enter comments before submitting'
+                                            )
+                                        }
+                                    }}
+                                    disabled={!comments.trim()}
+                                    className={`w-full py-2 px-4 rounded-lg transition-all duration-200 ${
+                                        comments.trim()
+                                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    }`}
+                                >
+                                    Submit Comments
+                                </button>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
         </div>
     )
